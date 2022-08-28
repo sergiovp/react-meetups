@@ -1,32 +1,72 @@
-import { ALL_MEETUP_PAGE, FAVORITES_PAGE, NEW_MEETUP_PAGE } from "./../../utils/constants";
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useScrollDirection } from '../../util-hooks/useScrollDirection';
+import getFavorites from '../../utils/getFavorites';
 
-import classes from "./MainNavigation.module.css";
+import classes from './MainNavigation.module.css';
 
-export default function MainNavigation({ setPage }) {
-  return (
-    <header className={classes.header} data-test="navigation-header">
-      <div className={classes.logo}>React Meetups</div>
-      <nav>
-        <ul>
-          <li>
-            <a href="#" onClick={() => setPage(ALL_MEETUP_PAGE)}>
-              All Meetups
-            </a>
-          </li>
+function MainNavigation() {
+    const pathName = useLocation().pathname;
+    const isScrollingDown = useScrollDirection() === 'down';
+    const [favoritesNumber, setFavoritesNumber] = useState(
+        getFavorites().length,
+    );
 
-          <li>
-            <a href="#" onClick={() => setPage(NEW_MEETUP_PAGE)}>
-              Add New Meetup
-            </a>
-          </li>
-          <li>
-            <a href="#" onClick={() => setPage(FAVORITES_PAGE)}>
-              My Favorites
-              <span className={classes.badge}>{0}</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </header>
-  );
+    useEffect(() => {
+        window.addEventListener('storage', () => {
+            setFavoritesNumber(getFavorites().length);
+        });
+
+        return () => {
+            window.removeEventListener('storage');
+        };
+    }, []);
+
+    return (
+        <header
+            className={
+                isScrollingDown ? `${classes.header}hide` : classes.header
+            }
+            data-test="navigation-header"
+        >
+            {!isScrollingDown && (
+                <>
+                    <div className={classes.logo}>React Meetups</div>
+                    <nav>
+                        <ul>
+                            <li
+                                className={pathName === '/' ? classes.item : ''}
+                            >
+                                <a href="/">All Meetups</a>
+                            </li>
+
+                            <li
+                                className={
+                                    pathName === '/new' ? classes.item : ''
+                                }
+                            >
+                                <a href="/new">Add New Meetup</a>
+                            </li>
+                            <li
+                                className={
+                                    pathName === '/favorites'
+                                        ? classes.item
+                                        : ''
+                                }
+                            >
+                                <a href="/favorites">
+                                    My Favorites
+                                    <span className={classes.badge}>
+                                        {favoritesNumber || 0}
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </>
+            )}
+        </header>
+    );
 }
+
+export default MainNavigation;
